@@ -6,14 +6,14 @@ import OrganizationTree from './organization-tree';
 
 const errorStrings = {
   PARSE_XML: 'Error occured while parsing imsmanifest.xml',
-  FORMAT_XML: 'Wrong imsmanifest.xml format',
+  FORMAT_XML: 'Wrong imsmanifest.xml format'
 };
 let manifest = null;
 let iframe = null;
 let resources = null;
 let organizationTree = null;
 let rootUrl = null;
-let debug = false;
+const debug = false;
 const ns = {};
 
 const log = (...args) => {
@@ -28,27 +28,43 @@ function getValueIn(node, tagName, namespace) {
   const tag = namespace
     ? node.getElementsByTagNameNS(namespace, tagName)[0]
     : node.getElementsByTagName(tagName)[0];
-  return tag
-    ? tag.childNodes[0].nodeValue
-    : null;
+  return tag ? tag.childNodes[0].nodeValue : null;
 }
 
 function parseSequencing(item) {
-  const sequencingTag = item ? item.getElementsByTagNameNS(ns.imsss, 'sequencing')[0] : null;
-  const objectivesTag = sequencingTag ? sequencingTag.getElementsByTagNameNS(ns.imsss, 'objectives')[0] : null;
-  const primaryObjective = objectivesTag ? objectivesTag.getElementsByTagNameNS(ns.imsss, 'primaryObjective')[0] : null;
-  const objectiveTags = objectivesTag ? objectivesTag.getElementsByTagNameNS(ns.imsss, 'objective') : [];
-  const objectives = [].map.call(objectiveTags, obj => ({ id: obj.getAttribute('objectiveID') }));
+  const sequencingTag = item
+    ? item.getElementsByTagNameNS(ns.imsss, 'sequencing')[0]
+    : null;
+  const objectivesTag = sequencingTag
+    ? sequencingTag.getElementsByTagNameNS(ns.imsss, 'objectives')[0]
+    : null;
+  const primaryObjective = objectivesTag
+    ? objectivesTag.getElementsByTagNameNS(ns.imsss, 'primaryObjective')[0]
+    : null;
+  const objectiveTags = objectivesTag
+    ? objectivesTag.getElementsByTagNameNS(ns.imsss, 'objective')
+    : [];
+  const objectives = [].map.call(objectiveTags, obj => ({
+    id: obj.getAttribute('objectiveID')
+  }));
 
   // v.2004
-  const scaledPassingScore = getValueIn(primaryObjective, 'minNormalizedMeasure', ns.imsss);
+  const scaledPassingScore = getValueIn(
+    primaryObjective,
+    'minNormalizedMeasure',
+    ns.imsss
+  );
   // TODO: maxTimeAllowed
-  const limitConditionsTag = sequencingTag ? sequencingTag.getElementsByTagNameNS(ns.imsss, 'limitConditions')[0] : null;
-  const maxTimeAllowed = limitConditionsTag ? limitConditionsTag.getAttribute('attemptAbsoluteDurationLimit') : null;
+  const limitConditionsTag = sequencingTag
+    ? sequencingTag.getElementsByTagNameNS(ns.imsss, 'limitConditions')[0]
+    : null;
+  const maxTimeAllowed = limitConditionsTag
+    ? limitConditionsTag.getAttribute('attemptAbsoluteDurationLimit')
+    : null;
   return {
     scaledPassingScore,
     objectives,
-    maxTimeAllowed,
+    maxTimeAllowed
   };
 }
 
@@ -63,15 +79,17 @@ function parseItem(item) {
   const masteryScore = getValueIn(item, 'masteryscore', ns.adlcp);
   const maxTimeAllowed = getValueIn(item, 'maxTimeAllowed', ns.adlcp);
 
-  return Object.assign({
-    timeLimitAction,
-    maxTimeAllowed,
-    masteryScore,
-    completionThreshold,
-    launchData,
-  }, parseSequencing(item));
+  return Object.assign(
+    {
+      timeLimitAction,
+      maxTimeAllowed,
+      masteryScore,
+      completionThreshold,
+      launchData
+    },
+    parseSequencing(item)
+  );
 }
-
 
 function findResourceByIdRef(resourcesList, idRef) {
   log('resources list', resourcesList);
@@ -83,7 +101,6 @@ function findResourceByIdRef(resourcesList, idRef) {
     return resource.getAttribute('identifier') === idRef;
   })[0]; // возвращаем первый элемент массива
 }
-
 
 function getItemSrcPath(item) {
   const idRef = item.getAttribute('identifierref');
@@ -103,9 +120,9 @@ export default {
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     document.getElementById(wrapper).appendChild(iframe);
-    debug = options.debug;
-    return fetch(`${rootUrl}/imsmanifest.xml`)
-      .then(responce => responce.text().then((xmlText) => {
+    const { debug } = options;
+    return fetch(`${rootUrl}/imsmanifest.xml`).then(response =>
+      response.text().then(xmlText => {
         const parser = new DOMParser();
         // opera mini works bad with parseFromString
         manifest = parser.parseFromString(xmlText, 'text/xml');
@@ -127,22 +144,39 @@ export default {
         ns.adlcp = manifestTag ? manifestTag.getAttribute('xmlns:adlcp') : '';
 
         // <resourses>
-        resources = manifest.getElementsByTagName('resources')[0].getElementsByTagName('resource');
+        resources = manifest
+          .getElementsByTagName('resources')[0]
+          .getElementsByTagName('resource');
 
         // <organization>
-        organizationTree = new OrganizationTree(manifest.getElementsByTagName('organization')[0]);
+        organizationTree = new OrganizationTree(
+          manifest.getElementsByTagName('organization')[0]
+        );
         const currentItem = organizationTree.current();
 
-        const initModel = Object.assign({}, options.initModel || {}, parseItem(currentItem));
+        const initModel = Object.assign(
+          {},
+          options.initModel || {},
+          parseItem(currentItem)
+        );
 
-        return scormApi.init(Object.assign({}, options, {
-          schemaVersion,
-          initModel,
-          callbacks: { onTerminate: () => { iframe.src = ''; } }, // todo: what if... (check time sequencing) + callback from options
-        })).then(() => {
-          iframe.src = getItemSrcPath(currentItem);
-        });
-      }));
+        return scormApi
+          .init(
+            Object.assign({}, options, {
+              schemaVersion,
+              initModel,
+              callbacks: {
+                onTerminate: () => {
+                  iframe.src = '';
+                }
+              } // todo: what if... (check time sequencing) + callback from options
+            })
+          )
+          .then(() => {
+            iframe.src = getItemSrcPath(currentItem);
+          });
+      })
+    );
   },
   previous() {
     const prevItem = organizationTree.shiftPrev();
@@ -154,11 +188,8 @@ export default {
     if (!nextItem) throw new Error('No next item provided');
     iframe.src = getItemSrcPath(nextItem);
   },
-  exit() {
-
-  },
-  abandon() {
-  },
+  exit() {},
+  abandon() {},
   hasPrevious() {
     return organizationTree.hasPrev();
   },
@@ -170,5 +201,5 @@ export default {
   },
   hasAbandon() {
     return false;
-  },
+  }
 };

@@ -10,10 +10,12 @@ class Node {
     return this;
   }
 }
-const findFirstTerminal = node => (node.children ? findFirstTerminal(node.children[0]) : node);
-const findLastTerminal = node => (node.children
-  ? findLastTerminal(node.children[node.children.length - 1])
-  : node);
+const findFirstTerminal = node =>
+  node.children ? findFirstTerminal(node.children[0]) : node;
+const findLastTerminal = node =>
+  node.children
+    ? findLastTerminal(node.children[node.children.length - 1])
+    : node;
 
 export default class OrganizationTree {
   constructor(organizationTag) {
@@ -24,12 +26,14 @@ export default class OrganizationTree {
       const node = new Node({
         value: itemTag,
         parent,
-        index,
+        index
       });
-      const children = [].map.call(itemTag.children || [], subTag =>
-        (subTag.tagName === 'item' ? subTag : null))
-      .filter(tag => tag !== null)
-      .map((subItemTag, i) => parseItemTree(subItemTag, node, i));
+      const children = [].map
+        .call(itemTag.children || [], subTag =>
+          subTag.tagName === 'item' ? subTag : null
+        )
+        .filter(tag => tag !== null)
+        .map((subItemTag, i) => parseItemTree(subItemTag, node, i));
       return children.length === 0 ? node : node.setChildren(children);
     };
     this._root = parseItemTree(organizationTag, null, 0);
@@ -41,7 +45,7 @@ export default class OrganizationTree {
   }
 
   next(shiftPointer = false) {
-    const findNext = (node) => {
+    const findNext = node => {
       if (!node.parent) return null;
       return node.parent.children.length === node.index + 1
         ? findNext(node.parent)
@@ -55,7 +59,7 @@ export default class OrganizationTree {
   }
 
   prev(shiftPointer = false) {
-    const findPrev = (node) => {
+    const findPrev = node => {
       if (!node.parent) return null;
       return node.index === 0
         ? findPrev(node.parent)

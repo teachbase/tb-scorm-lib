@@ -1,4 +1,4 @@
-import pkg from '../../package.json'; // path resolve?
+import {version} from '../../../package.json'; // path resolve?
 
 let cmi = {};
 let schema = '2004';
@@ -15,7 +15,7 @@ const cmiDefault = {
     'cmi.interactions._count': 0,
   },
   2004: {
-    'cmi._version': pkg.version,
+    'cmi._version': version,
     'cmi.mode': 'normal',
     'cmi.credit': 'credit',
     'cmi.entry': 'ab-initio',
@@ -29,7 +29,7 @@ const cmiDefault = {
 };
 const cmiNames = {
   1.2: {
-    enry: 'cmi.core.entry',
+    entry: 'cmi.core.entry',
     exit: 'cmi.core.exit',
     learner_id: 'cmi.core.student_id',
     learner_name: 'cmi.core.student_name',

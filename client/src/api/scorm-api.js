@@ -6,7 +6,7 @@ import * as cmi from './cmi';
 const STATE = {
   NOT_INITIALIZED: 'Not Initialized',
   RUNNING: 'Running',
-  TERMINATED: 'Terminated',
+  TERMINATED: 'Terminated'
 };
 
 let state = null;
@@ -15,9 +15,10 @@ let error = 0;
 const valueNameSecurityCheckRe = /^(cmi||adl)\.(\w|\.)+$/;
 
 const stringEndsWith = (str, suffix) =>
-  str.length >= suffix.length && str.substr(str.length - suffix.length) === suffix;
+  str.length >= suffix.length &&
+  str.substr(str.length - suffix.length) === suffix;
 
-const isSameHost = (url) => {
+const isSameHost = url => {
   if (!url) return false;
   const matches = url.match(/^(?:https?:\/\/|\/\/)?([^\/]+)\//);
   let domainport = matches && matches[1];
@@ -30,12 +31,12 @@ const isSameHost = (url) => {
 };
 
 // Check error functions
-const valueNameSecurityCheck = (name) => {
+const valueNameSecurityCheck = name => {
   error = name.search(valueNameSecurityCheckRe) === 0 ? 0 : 401;
   return error === 0;
 };
 // TODO
-const valueNameReadOnlyCheck = (name) => {
+const valueNameReadOnlyCheck = name => {
   error = 0;
   if (stringEndsWith(name, '._children')) {
     error = 403;
@@ -61,7 +62,7 @@ export default {
     debug = false,
     autoCommitInterval = -1, // in seconds
     callbacks,
-    initModel,
+    initModel
   }) {
     // Pre init
     state = STATE.NOT_INITIALIZED;
@@ -75,46 +76,52 @@ export default {
     // Post - store cmi && results if the dataUrl is present
     const sameHost = isSameHost(dataUrl);
     const headers = sameHost
-      ? Object.assign({
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      }, postHeaders)
+      ? Object.assign(
+          {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          postHeaders
+        )
       : postHeaders;
     log('Same host:', sameHost);
     log(dataUrl);
     const post = dataUrl
       ? (storeCmi = true) =>
-        fetch(dataUrl, {
-          headers,
-          credentials: 'same-origin',
-          method: 'POST',
-          body: JSON.stringify({
-            scorm_stat: {  // TODO: beauty
-              cmiString: storeCmi ? cmi.getJSONString() : '',
-              results: cmi.getResults(),
-            },
-          }),
-        })
+          fetch(dataUrl, {
+            headers,
+            credentials: 'same-origin',
+            method: 'POST',
+            body: JSON.stringify({
+              scorm_stat: {
+                // TODO: beauty
+                cmiString: storeCmi ? cmi.getJSONString() : '',
+                results: cmi.getResults()
+              }
+            })
+          })
       : () => Promise.resolve();
 
     cmi.init(schemaVersion, initModel);
 
-    const loadCmi = dataUrl ?
-      fetch(dataUrl, {
-        headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
-      })
-      .then(responce => responce.json())
-      .then(json => json.scorm_stat)
-      .then((scormStat) => {
-        log('Fetched info from server', scormStat);
-        cmi.restore(scormStat.cmiString, scormStat.data);
-      })
-      .catch(log)
+    const loadCmi = dataUrl
+      ? fetch(dataUrl, {
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin'
+        })
+          .then(responce => responce.json())
+          .then(json => json.scorm_stat)
+          .then(scormStat => {
+            log('Fetched info from server', scormStat);
+            cmi.restore(scormStat.cmiString, scormStat.data);
+          })
+          .catch(log)
       : Promise.resolve();
 
     return loadCmi.then(() => {
-      if (callbacks && callbacks.preInitialize) { callbacks.preInitialize(); }
+      if (callbacks && callbacks.preInitialize) {
+        callbacks.preInitialize();
+      }
 
       const errorStrings = d.getErrorStrings(schemaVersion);
       const fnms = d.getFunctionNames(schemaVersion);
@@ -145,7 +152,9 @@ export default {
         state = STATE.RUNNING;
         error = 0;
         let callbackResult = 'true';
-        if (callbacks && callbacks.onInitialize) { callbackResult = callbacks.onInitialize(); }
+        if (callbacks && callbacks.onInitialize) {
+          callbackResult = callbacks.onInitialize();
+        }
         if (callbackResult === 'false') {
           error = 102;
           return 'false';
@@ -161,7 +170,9 @@ export default {
         post(cmi.exit().save).catch(log);
 
         let callbackResult = 'true';
-        if (callbacks && callbacks.onTerminate) { callbackResult = callbacks.onTerminate(); }
+        if (callbacks && callbacks.onTerminate) {
+          callbackResult = callbacks.onTerminate();
+        }
         if (callbackResult === 'false') {
           error = 111;
           return 'false';
@@ -173,14 +184,14 @@ export default {
         return 'true';
       };
 
-      API[fnms.GetValue] = (name) => {
+      API[fnms.GetValue] = name => {
         log('LMS GetValue', name);
         if (!stateCheck(122, 123)) return '';
         if (!valueNameSecurityCheck(name)) return '';
         // TODO: initialized check (_children) ?
 
         let retval = cmi.get(name);
-        if (typeof (retval) === 'undefined') {
+        if (typeof retval === 'undefined') {
           retval = '';
           error = 403;
         }
@@ -206,23 +217,27 @@ export default {
         if (!stateCheck(142, 143)) return 'false';
 
         // TODO: Errors (like "Bad connection, sorry..")
-        post().catch((e) => { error = 1000; });
+        post().catch(e => {
+          error = 1000;
+        });
 
         let callbackResult = 'true';
-        if (callbacks && callbacks.onCommit) { callbackResult = callbacks.onCommit(); }
+        if (callbacks && callbacks.onCommit) {
+          callbackResult = callbacks.onCommit();
+        }
         if (callbackResult === 'false') return 'false';
 
         lastCommit = Date.now();
         return 'true';
       };
 
-      API[fnms.GetDiagnostic] = (errCode) => {
+      API[fnms.GetDiagnostic] = errCode => {
         log('LMS GetDiagnostic', errCode);
         if (!errCode) return API[fnms.GetLastError]();
         return errorStrings[errCode] ? errorStrings[errCode] : 'Uknown error';
       };
 
-      API[fnms.GetErrorString] = (errCode) => {
+      API[fnms.GetErrorString] = errCode => {
         log('LMS GetErrorString', errCode);
         return errorStrings[errCode] ? errorStrings[errCode] : 'Uknown error';
       };
@@ -246,8 +261,5 @@ export default {
   // for 2004 schema only
   getProgressMeasure: () => cmi.get('cmi.progress_measure'),
 
-  getResults: () => cmi.getResults(),
-
-
+  getResults: () => cmi.getResults()
 };
-

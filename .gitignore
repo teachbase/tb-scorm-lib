@@ -1,10 +1,6 @@
-*/node_modules
-*/npm-debug.log
-npm-debug.log
-/client/scormapi.js
+/node_modules
 /client/dist/resources/*
 !/client/dist/resources/advancedCalls2004
 !/client/dist/resources/beerHistory
-default
 .idea
 .DS_Store
