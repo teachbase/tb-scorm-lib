@@ -1,21 +1,23 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+// const serveStatic = require("serve-static");
 
 
 const PORT = 8081;
 const IP = '0.0.0.0';
 
 const app = express();
-app.use(bodyParser.text()); 
+// app.use(bodyParser.text());
+app.use(express.static("../client/dist"));
+app.use(express.json());
 
 let cache = {};
 
 app.get('/api/scorm/manifest/:id', (req, res) => {
     console.log(req.params);
-    
+
     // returns manifest url, which lies in the root of scorm course
     res.json({
-      manifestUrl : 'https://tb-scorm-lib-akam.c9users.io' + '/resources/' + req.params.id 
+      manifestUrl : 'https://tb-scorm-lib-akam.c9users.io' + '/resources/' + req.params.id
     });
     res.end();
 });
@@ -31,8 +33,8 @@ app.get('/api/scorm/results', (req, res) => {
 });
 
 app.post('/api/scorm/results', (req, res) => {
-  cache = JSON.parse(req.body);
-  console.log('got post request', cache);
+  console.log('got post request', req.body);
+  cache = req.body;
   res.set('Access-Control-Allow-Methods', '*');
   res.set('Access-Control-Allow-Headers', '*');
   res.set("Access-Control-Allow-Origin", "*");  // becouse of PORT difference..
