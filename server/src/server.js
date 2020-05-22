@@ -8,7 +8,8 @@ const IP = '0.0.0.0';
 const app = express();
 app.use(function(_req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Methods', '*');
+  res.header('Access-Control-Allow-Headers', '*');
   next();
 });
 // app.use(bodyParser.text());
@@ -29,9 +30,6 @@ app.get('/api/scorm/manifest/:id', (req, res) => {
 
 app.get('/api/scorm/results', (req, res) => {
   console.log('get request, Responce:', cache);
-  res.set('Access-Control-Allow-Methods', '*');
-  res.set('Access-Control-Allow-Headers', '*');
-  res.set("Access-Control-Allow-Origin", "*");  // becouse of PORT difference..
   res.set('Content-Type', 'application/json');
   res.send(JSON.stringify(cache));
   res.end();
@@ -40,9 +38,6 @@ app.get('/api/scorm/results', (req, res) => {
 app.post('/api/scorm/results', (req, res) => {
   console.log('got post request', req.body);
   cache = req.body;
-  res.set('Access-Control-Allow-Methods', '*');
-  res.set('Access-Control-Allow-Headers', '*');
-  res.set("Access-Control-Allow-Origin", "*");  // becouse of PORT difference..
   res.end();
 });
 
