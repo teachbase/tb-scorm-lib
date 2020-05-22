@@ -6,6 +6,11 @@ const PORT = 8081;
 const IP = '0.0.0.0';
 
 const app = express();
+app.use(function(_req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 // app.use(bodyParser.text());
 app.use(express.static("../client/dist"));
 app.use(express.json());
